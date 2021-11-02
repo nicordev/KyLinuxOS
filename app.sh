@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/bash
 
 ###Logiciels###
 
@@ -24,67 +24,74 @@
 #Openrgb="openrgb"
 #Souris="piper"
 
-#Gestionnaire de paquets
-yay -S ${gestionnaire} 
-no_install="false"
+###### Functions ######
 
-function_name function askQuestion {
-	if [[ "$default" = "" || "$default" =~ ^[Yy]$ ]] ; then
-		default="y"
-		echo -n "$question [Y/n] "
-	else
-		echo -n "$question [y/N] "
-	fi
-	if [ "${no_install}" != "true" ] ; then
-		read -n 1 answer
-	else
-		answer="${default}"
-		echo "${default} (autoselected)"
-	fi
-	if [[ "${answer}" =~ ^[Yy]$ || ( "${default}" = "y" && "${answer}" = "" ) ]];then
-		answer="true"
-	else
-		answer="false"
-	fi
+askContinueDefaultYes() {
+    echo -e "\e[1mContinuer?\e[0m [Y/n] "
+    read -n 1 answer
+
+    if [[ ${answer,,} == n ]]; then
+        return 1
+    fi
 }
 
-# Installation
-question="Installer les plateformes de jeux"?
-askQuestion 
-if [ "${answer}" != "true" ] ; then
-	gestionnaire="${gestionnaire} lutris steam-native-runtime heroic-games-launcher-bin"
-fi
-echo
+askWhichProgramsToInstall() {
+	echo "Installer les plateformes de jeux?"
+	askContinueDefaultYes
 
-question="Installer les surcouche de compatibilité?"
-askQuestion
-if [ "${answer}" != "true" ] ; then
-	gestionnaire="${gestionnaire} wine-staging winetricks proton-ge-custom-bin"
-fi
-echo
+	if [ $? == 0 ]
+	then
+		programsToInstall="${programsToInstall} lutris steam-native-runtime heroic-games-launcher-bin"
+	fi
 
-question="Installer les noyaux de Jeux?"
-askQuestion
-if [ "${answer}" != "true" ] ; then
-	gestionnaire="${gestionnaire} linux-zen linux-zen-header gamemode lib32-gamemode"
-fi
-echo
+	echo "Installer les surcouche de compatibilité?"
+	askContinueDefaultYes
 
-question="Installer le clavardages?"
-askQuestion
-if [ "${answer}" != "true" ] ; then
-	gestionnaire="${gestionnaire} discord"
-fi
-echo
+	if [ $? == 0 ]
+	then
+		programsToInstall="${programsToInstall} wine-staging winetricks proton-ge-custom-bin"
+	fi
 
-question="Installer les outils materiel?"
-askQuestion
-if [ "${answer}" != "true" ] ; then
-	gestionnaire="${gestionnaire} mangohud openrgb piper"
-fi
+	echo "Installer les noyaux de Jeux?"
+	askContinueDefaultYes
 
-echo "
+	if [ $? == 0 ]
+	then
+		programsToInstall="${programsToInstall} linux-zen linux-zen-header gamemode lib32-gamemode"
+	fi
 
-AmuseToiBien :)
+	echo "Installer le clavardages?"
+	askContinueDefaultYes
 
-"
+	if [ $? == 0 ]
+	then
+		programsToInstall="${programsToInstall} discord"
+	fi
+
+	echo "Installer les outils materiel?"
+	askContinueDefaultYes
+
+	if [ $? == 0 ]
+	then
+		programsToInstall="${programsToInstall} mangohud openrgb piper"
+	fi
+
+	echo $programsToInstall
+}
+
+install() {
+	yay -S ${programsToInstall}
+}
+
+sayGoodbye() {
+	echo "
+
+	AmuseToiBien :)
+
+	"
+}
+
+###### End Functions ######
+
+askWhichProgramsToInstall # En mettant ta logique dans des fonctions, tu peux facilement changer l'ordre d'exécution, ici par exemple j'ai déplacé l'installation après le choix des programmes à installer
+install && sayGoodbye # Le `&&` va permettre de n'appeler la fonction `sayGoodbye` que si la fonction `install` s'est exécutée sans erreur
